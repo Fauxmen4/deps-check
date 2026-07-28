@@ -38,7 +38,7 @@ type versionInfo struct {
 // LatestModuleVersion returns the latest known version of the given module.
 // It returns ErrNotFound if the proxy has no record of the module, and
 // ErrGone if the module has been retracted.
-func (vp *VersionProvider) LatestModuleVersion(ctx context.Context, module string) (string, error) {
+func (vp *VersionProvider) LatestModuleVersion(module string) (string, error) {
 	url := fmt.Sprintf("%s/%s/@latest", vp.baseURL, module)
 
 	resp, err := vp.client.Get(url)
