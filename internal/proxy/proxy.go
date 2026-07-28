@@ -44,7 +44,7 @@ func (vp *VersionProvider) LatestModuleVersion(module string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to fetch latest version of %s: %w", module, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }() 
 
 	switch resp.StatusCode {
 	case http.StatusOK:
