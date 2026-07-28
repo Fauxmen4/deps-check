@@ -1,0 +1,41 @@
+name: CI
+
+run-name: CI workflow
+
+on:
+  push:
+    branches:
+      - dev
+      - main
+
+jobs:
+  ci:
+    runs-on: ubuntu-22.04
+
+    steps:
+      - uses: actions/checkout@v4
+    
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: 1.26.3
+          cache: true
+          cache-dependency-path: go.sum
+
+      - name: Display go version
+        run: |
+          go version
+    
+      - name: Install dependencies
+        run: go mod verify
+      
+      - run: go mod tidy
+
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v8
+
+      - name: Build
+        run: go build -o app cmd/phone-validator/main.go
+      
+      - name: Run unit-tests
+        run: go test -v ./pkg/...
