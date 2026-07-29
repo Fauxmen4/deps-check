@@ -30,4 +30,7 @@ tidy: ## Tidy go.mod
 clean: ## Remove build artifacts
 	rm -rf bin/ coverage.out coverage.html dist/
 
+release: ## Build a local snapshot release (no publishing)
+	goreleaser release --snapshot --clean
+
 .DEFAULT_GOAL := help
