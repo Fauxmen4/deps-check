@@ -5,7 +5,7 @@
 [![Release](https://img.shields.io/github/v/release/Fauxmen4/deps-check)](https://github.com/Fauxmen4/deps-check/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-**depscheck** – CLI-утилита для анализа зависимостей Go-модуля в Git-репозитории
+**depscheck** – CLI-утилита для анализа зависимостей Go-модуля в Git-репозитории. **Работает только с GitHub.**
 
 ## Установка
 ```bash
