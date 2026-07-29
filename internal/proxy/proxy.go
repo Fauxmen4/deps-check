@@ -19,7 +19,6 @@ var (
 // module proxy protocol described at https://proxy.golang.org.
 type VersionProvider struct {
 	baseURL string
-	client  *http.Client
 }
 
 // NewVersionProvider returns a VersionProvider that talks to the default
@@ -40,7 +39,7 @@ type versionInfo struct {
 func (vp *VersionProvider) LatestModuleVersion(module string) (string, error) {
 	url := fmt.Sprintf("%s/%s/@latest", vp.baseURL, module)
 
-	resp, err := vp.client.Get(url)
+	resp, err := http.Get(url)
 	if err != nil {
 		return "", fmt.Errorf("failed to fetch latest version of %s: %w", module, err)
 	}
