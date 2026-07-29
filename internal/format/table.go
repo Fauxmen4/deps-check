@@ -25,7 +25,7 @@ var (
 )
 
 // Format writes reports as a styled table to w.
-func (f *TableFormatter) Write(w io.Writer, reports []analyzer.DependencyReport) error {
+func (f *TableFormatter) Write(w io.Writer, moduleInfo analyzer.ModuleInfo, reports []analyzer.DependencyReport) error {
 	t := table.New().
 		Border(lipgloss.NormalBorder()).
 		BorderStyle(borderStyle).
@@ -57,6 +57,8 @@ func (f *TableFormatter) Write(w io.Writer, reports []analyzer.DependencyReport)
 		t.Row(r.Module, r.Current, latest, update, indirect)
 	}
 
-	_, err := fmt.Fprintln(w, t.Render())
+	_, err := fmt.Fprintf(w, "Module: %s, version: %s\nDependencies:\n", moduleInfo.Name, moduleInfo.Version)
+	_ = err
+	_, err = fmt.Fprintln(w, t.Render())
 	return err
 }

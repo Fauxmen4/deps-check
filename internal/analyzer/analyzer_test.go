@@ -2,9 +2,11 @@ package analyzer
 
 import (
 	"testing"
+
+	"github.com/google/go-cmp/cmp"
 )
 
-func TestParseDeps(t *testing.T) {
+func TestParseGoMod(t *testing.T) {
 	t.Parallel()
 
 	const gomodFull = `module github.com/example/repo
@@ -27,20 +29,28 @@ require (
 go 1.22
 `
 
+	const gomodMinimal = `module github.com/example/repo
+`
+
 	const gomodInvalid = `this is not a valid go.mod`
 
 	tests := []struct {
 		name       string
 		gomod      string
 		directOnly bool
-		want       []Dependency
+		wantInfo   ModuleInfo
+		wantDeps   []Dependency
 		wantErr    bool
 	}{
 		{
 			name:       "all dependencies",
 			gomod:      gomodFull,
 			directOnly: false,
-			want: []Dependency{
+			wantInfo: ModuleInfo{
+				Name:    "github.com/example/repo",
+				Version: "1.22",
+			},
+			wantDeps: []Dependency{
 				{Module: "github.com/stretchr/testify", Current: "v1.9.0", Indirect: false},
 				{Module: "github.com/spf13/cobra", Current: "v1.8.0", Indirect: false},
 				{Module: "github.com/davecgh/go-spew", Current: "v1.1.1", Indirect: true},
@@ -51,7 +61,11 @@ go 1.22
 			name:       "direct only",
 			gomod:      gomodFull,
 			directOnly: true,
-			want: []Dependency{
+			wantInfo: ModuleInfo{
+				Name:    "github.com/example/repo",
+				Version: "1.22",
+			},
+			wantDeps: []Dependency{
 				{Module: "github.com/stretchr/testify", Current: "v1.9.0", Indirect: false},
 				{Module: "github.com/spf13/cobra", Current: "v1.8.0", Indirect: false},
 			},
@@ -60,7 +74,21 @@ go 1.22
 			name:       "no dependencies",
 			gomod:      gomodEmpty,
 			directOnly: false,
-			want:       []Dependency{},
+			wantInfo: ModuleInfo{
+				Name:    "github.com/example/repo",
+				Version: "1.22",
+			},
+			wantDeps: []Dependency{},
+		},
+		{
+			name:       "no go directive",
+			gomod:      gomodMinimal,
+			directOnly: false,
+			wantInfo: ModuleInfo{
+				Name:    "github.com/example/repo",
+				Version: "",
+			},
+			wantDeps: []Dependency{},
 		},
 		{
 			name:    "invalid go.mod",
@@ -73,22 +101,19 @@ go 1.22
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			got, err := parseDeps([]byte(tt.gomod), tt.directOnly)
+			gotInfo, gotDeps, err := parseGoMod([]byte(tt.gomod), tt.directOnly)
 			if (err != nil) != tt.wantErr {
-				t.Fatalf("parseDeps() error = %v, wantErr = %v", err, tt.wantErr)
+				t.Fatalf("parseGoMod() error = %v, wantErr = %v", err, tt.wantErr)
 			}
 			if tt.wantErr {
 				return
 			}
 
-			if len(got) != len(tt.want) {
-				t.Fatalf("got %d deps, want %d\ngot:  %+v\nwant: %+v",
-					len(got), len(tt.want), got, tt.want)
+			if diff := cmp.Diff(tt.wantInfo, gotInfo); diff != "" {
+				t.Errorf("ModuleInfo mismatch (-want +got):\n%s", diff)
 			}
-			for i := range got {
-				if got[i] != tt.want[i] {
-					t.Errorf("dep[%d] = %+v, want %+v", i, got[i], tt.want[i])
-				}
+			if diff := cmp.Diff(tt.wantDeps, gotDeps); diff != "" {
+				t.Errorf("Dependencies mismatch (-want +got):\n%s", diff)
 			}
 		})
 	}
