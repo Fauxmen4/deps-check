@@ -9,8 +9,13 @@ import (
 
 type JSONFormatter struct{}
 
-// jsonItem is a DependencyReport representation.
-type jsonItem struct {
+type jsonReport struct {
+	Name         string       `json:"name"`
+	Version      string       `json:"version"`
+	Dependencies []dependency `json:"dependencies"`
+}
+
+type dependency struct {
 	Module   string              `json:"module"`
 	Current  string              `json:"current"`
 	Latest   string              `json:"latest,omitempty"`
@@ -20,10 +25,10 @@ type jsonItem struct {
 }
 
 // Format writes report as JSON to w.
-func (f *JSONFormatter) Write(w io.Writer, report []analyzer.DependencyReport) error {
-	items := make([]jsonItem, len(report))
+func (f *JSONFormatter) Write(w io.Writer, moduleInfo analyzer.ModuleInfo, report []analyzer.DependencyReport) error {
+	deps := make([]dependency, len(report))
 	for i, r := range report {
-		items[i] = jsonItem{
+		deps[i] = dependency{
 			Module:   r.Module,
 			Current:  r.Current,
 			Latest:   r.Latest,
@@ -31,11 +36,17 @@ func (f *JSONFormatter) Write(w io.Writer, report []analyzer.DependencyReport) e
 			Indirect: r.Indirect,
 		}
 		if r.Err != nil {
-			items[i].Error = r.Err.Error()
+			deps[i].Error = r.Err.Error()
 		}
+	}
+
+	r := jsonReport{
+		Name: moduleInfo.Name, 
+		Version: moduleInfo.Version, 
+		Dependencies: deps,
 	}
 
 	enc := json.NewEncoder(w)
 	enc.SetIndent("", "  ")
-	return enc.Encode(items)
+	return enc.Encode(r)
 }

@@ -17,7 +17,7 @@ const (
 
 // Formatter renders and prints dependency report.
 type Formatter interface {
-	Write(w io.Writer, report []analyzer.DependencyReport) error
+	Write(w io.Writer, moduleInfo analyzer.ModuleInfo, report []analyzer.DependencyReport) error
 }
 
 func New(f Format) (Formatter, error) {

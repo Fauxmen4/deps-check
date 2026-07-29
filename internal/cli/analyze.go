@@ -82,7 +82,7 @@ func runAnalyze(repoURL string, opts *analyzeOptions) error {
 	// analyze
 	provider := proxy.NewVersionProvider()
 	analyzer := anlzr.New(provider)
-	report, err := analyzer.Analyze(goMod, anlzr.Options{
+	moduleInfo, report, err := analyzer.Analyze(goMod, anlzr.Options{
 		DirectOnly:  opts.directOnly,
 		Concurrency: opts.concurrency,
 	})
@@ -104,5 +104,5 @@ func runAnalyze(repoURL string, opts *analyzeOptions) error {
 	if err != nil {
 		return fmt.Errorf("invalid format: %w", err)
 	}
-	return formatter.Write(os.Stdout, report)
+	return formatter.Write(os.Stdout, moduleInfo, report)
 }

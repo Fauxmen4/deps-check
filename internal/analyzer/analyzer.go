@@ -33,6 +33,12 @@ type Dependency struct {
 	Indirect bool
 }
 
+// ModuleInfo describes the analyzed module itself.
+type ModuleInfo struct {
+	Name    string
+	Version string
+}
+
 // DependencyReport is the analysis result for one module.
 type DependencyReport struct {
 	Module   string
@@ -63,10 +69,10 @@ func New(provider VersionProvider) *Analyzer {
 }
 
 // Analyze parses go.mod and returns update reports for its dependencies.
-func (a *Analyzer) Analyze(goMod []byte, opts Options) ([]DependencyReport, error) {
-	deps, err := parseDeps(goMod, opts.DirectOnly)
+func (a *Analyzer) Analyze(goMod []byte, opts Options) (ModuleInfo, []DependencyReport, error) {
+	info, deps, err := parseGoMod(goMod, opts.DirectOnly)
 	if err != nil {
-		return nil, err
+		return ModuleInfo{}, nil, err
 	}
 
 	concurrency := opts.Concurrency
@@ -90,7 +96,7 @@ func (a *Analyzer) Analyze(goMod []byte, opts Options) ([]DependencyReport, erro
 	}
 
 	wg.Wait()
-	return reports, nil
+	return info, reports, nil
 }
 
 // analyze resolves the latest version for a single dependency.
@@ -118,11 +124,19 @@ func (a *Analyzer) analyze(dep Dependency) DependencyReport {
 	return report
 }
 
-// parseDeps extracts modules from go.mod, optionally skipping indirect ones.
-func parseDeps(goMod []byte, directOnly bool) ([]Dependency, error) {
+// parseGoMod extracts modules from go.mod, optionally skipping indirect ones.
+func parseGoMod(goMod []byte, directOnly bool) (ModuleInfo, []Dependency, error) {
 	f, err := modfile.Parse("go.mod", goMod, nil)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse go.mod: %w", err)
+		return ModuleInfo{}, nil, fmt.Errorf("failed to parse go.mod: %w", err)
+	}
+
+	info := ModuleInfo{}
+	if f.Module != nil {
+		info.Name = f.Module.Mod.Path
+	}
+	if f.Go != nil {
+		info.Version = f.Go.Version
 	}
 
 	deps := make([]Dependency, 0, len(f.Require))
@@ -137,7 +151,7 @@ func parseDeps(goMod []byte, directOnly bool) ([]Dependency, error) {
 		})
 	}
 
-	return deps, nil
+	return info, deps, nil
 }
 
 // classifyUpdate returns the difference level between current and latest versions.
